@@ -3,8 +3,16 @@ use std::fs;
 
 // This function processes the file upload and writes the file to the specified path.
 async fn put_file(filepath: String, file: impl warp::Buf) -> Result<impl warp::Reply, warp::Rejection> {
+    // Check if the file already exists.
+    if fs::metadata(&filepath).is_ok() {
+        return Ok(warp::reply::with_status(
+            "File already exists",
+            warp::http::StatusCode::CONFLICT,
+        ));
+    }
+
     // Open the file in write-only mode.
-    let mut file = match fs::File::create(filepath) {
+    let mut file = match fs::File::create(&filepath) {
         Ok(file) => file,
         Err(err) => return Ok(warp::reply::with_status(err.to_string(), warp::http::StatusCode::INTERNAL_SERVER_ERROR)),
     };
