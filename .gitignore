@@ -1,2 +1,7 @@
+# rust stuff
+/.cargo
+/target
+
+# cj standard
 node_modules/
 coverage/
