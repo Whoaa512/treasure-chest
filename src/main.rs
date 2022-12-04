@@ -83,7 +83,7 @@ async fn get_file(filepath_str: Tail) -> Result<impl warp::Reply, warp::Rejectio
 async fn main() {
     // Set up the routes for handling file uploads.
     let put_routes = put()
-        .and(path("put").and(path::tail()))
+        .and(path::tail())
         // 200MB limit
         .and(warp::body::content_length_limit(1024 * 1024 * 200))
         .and(warp::body::bytes())
@@ -93,7 +93,7 @@ async fn main() {
         });
 
     // Set up the route that returns the contents of a file.
-    let get_routes = get().and(path("get").and(path::tail())).and_then(get_file);
+    let get_routes = get().and(path::tail()).and_then(get_file);
 
     // Start the server.
     warp::serve(put_routes.or(get_routes))
