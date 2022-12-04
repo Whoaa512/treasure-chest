@@ -5,3 +5,6 @@
 # cj standard
 node_modules/
 coverage/
+
+
+/uploads
