@@ -3,11 +3,10 @@ use std::io::Write;
 use std::path::Path;
 
 use warp::hyper::body::Bytes;
-use warp::{Filter, path, put};
+use warp::{path, put, Filter};
 
-use warp::{Rejection, Reply};
 use warp::filters::path::Tail;
-
+use warp::{Rejection, Reply};
 
 // Use the warp::body::aggregate function to aggregate the request body
 // into a Vec<u8> value, which implements the std::io::Read trait.
@@ -16,20 +15,28 @@ async fn put_file(filepath: String, file_buf: Vec<u8>) -> Result<impl Reply, Rej
 
     // create full path if it doesn't exist
     if let Err(err) = fs::create_dir_all(file_path.parent().unwrap()) {
-        return Ok(warp::reply::with_status(err.to_string(), warp::http::StatusCode::INTERNAL_SERVER_ERROR));
+        return Ok(warp::reply::with_status(
+            err.to_string(),
+            warp::http::StatusCode::INTERNAL_SERVER_ERROR,
+        ));
     }
 
     let mut file = fs::File::create(filepath).unwrap();
 
     if let Err(err) = file.write_all(&file_buf) {
-        println!("Error: {}", err);  // todo better error handling
+        println!("Error: {}", err); // todo better error handling
 
-        return Ok(warp::reply::with_status(err.to_string(), warp::http::StatusCode::INTERNAL_SERVER_ERROR));
+        return Ok(warp::reply::with_status(
+            err.to_string(),
+            warp::http::StatusCode::INTERNAL_SERVER_ERROR,
+        ));
     }
 
-    Ok(warp::reply::with_status("File uploaded successfully.".to_string(), warp::http::StatusCode::CREATED))
+    Ok(warp::reply::with_status(
+        "File uploaded successfully.".to_string(),
+        warp::http::StatusCode::CREATED,
+    ))
 }
-
 
 // // This function reads the file at the specified path and returns its contents.
 // async fn get_file(filepath: String) -> Result<impl warp::Reply, warp::Rejection> {
@@ -59,7 +66,6 @@ async fn put_file(filepath: String, file_buf: Vec<u8>) -> Result<impl Reply, Rej
 
 #[tokio::main]
 async fn main() {
-
     // // Set up the route that returns the contents of a file.
     // let get_routes = get()
     //     .and(path("get").and(path::param::<String>()))
