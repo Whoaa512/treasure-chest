@@ -9,20 +9,25 @@ use warp::{get, path, put, Filter};
 use warp::filters::path::Tail;
 use warp::{Rejection, Reply};
 
+// TODO: make this configurable
+const UPLOAD_DIR: &str = "uploads"; // This is the directory where we will store the uploaded files.
+
 // Use the warp::body::aggregate function to aggregate the request body
 // into a Vec<u8> value, which implements the std::io::Read trait.
 async fn put_file(filepath: String, file_buf: Vec<u8>) -> Result<impl Reply, Rejection> {
-    let file_path = Path::new(&filepath);
+    let file_path = Path::new(UPLOAD_DIR).join(filepath);
+
+    let parent = file_path.parent().unwrap();
 
     // create full path if it doesn't exist
-    if let Err(err) = fs::create_dir_all(file_path.parent().unwrap()) {
+    if let Err(err) = fs::create_dir_all(parent) {
         return Ok(warp::reply::with_status(
             err.to_string(),
             warp::http::StatusCode::INTERNAL_SERVER_ERROR,
         ));
     }
 
-    let mut file = fs::File::create(filepath).unwrap();
+    let mut file = fs::File::create(file_path).unwrap();
 
     if let Err(err) = file.write_all(&file_buf) {
         println!("Error: {}", err); // todo better error handling
@@ -42,7 +47,7 @@ async fn put_file(filepath: String, file_buf: Vec<u8>) -> Result<impl Reply, Rej
 // This function reads the file at the specified path and returns its contents.
 async fn get_file(filepath_str: Tail) -> Result<impl warp::Reply, warp::Rejection> {
     // Convert the filepath string to a Path object.
-    let filepath = Path::new(filepath_str.as_str());
+    let filepath = Path::new(UPLOAD_DIR).join(filepath_str.as_str());
 
     // check if file exists
     if !filepath.exists() {
