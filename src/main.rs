@@ -1,7 +1,5 @@
 use bytes::Bytes;
-use std::convert::Infallible;
 use std::path::PathBuf;
-use std::sync::Arc;
 use tokio::fs;
 use warp::{Filter, Rejection, Reply};
 
@@ -17,7 +15,7 @@ pub mod handlers {
                 warp::http::StatusCode::OK,
             )),
             Err(_) => Ok(warp::reply::with_status(
-                "Not Found",
+                "Not Found".to_string(),
                 warp::http::StatusCode::NOT_FOUND,
             )),
         }
@@ -29,7 +27,7 @@ pub mod handlers {
             .await
             .map_err(|_| warp::reject())?;
         Ok(warp::reply::with_status(
-            "Created",
+            "Created".to_string(),
             warp::http::StatusCode::CREATED,
         ))
     }

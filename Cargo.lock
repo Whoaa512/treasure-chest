@@ -654,6 +654,7 @@ dependencies = [
 name = "simple-blob-store"
 version = "0.1.0"
 dependencies = [
+ "bytes",
  "tokio",
  "warp",
 ]
