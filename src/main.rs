@@ -1,31 +1,58 @@
-use warp::hyper::body::Bytes;
-use warp::{get, path, put, Filter};
+use bytes::Bytes;
+use std::convert::Infallible;
+use std::path::PathBuf;
+use std::sync::Arc;
+use tokio::fs;
+use warp::{Filter, Rejection, Reply};
 
-use warp::filters::path::Tail;
+pub mod handlers {
+    use super::*;
 
-use simple_blob_store::handlers::{get_file, put_file};
+    pub async fn get_file(filepath: String) -> Result<impl Reply, Rejection> {
+        let path = PathBuf::from("storage").join(&filepath);
+
+        match fs::read(&path).await {
+            Ok(contents) => Ok(warp::reply::with_status(
+                contents,
+                warp::http::StatusCode::OK,
+            )),
+            Err(_) => Ok(warp::reply::with_status(
+                "Not Found",
+                warp::http::StatusCode::NOT_FOUND,
+            )),
+        }
+    }
+
+    pub async fn put_file(filepath: String, file_buf: Bytes) -> Result<impl Reply, Rejection> {
+        let path = PathBuf::from("storage").join(&filepath);
+        fs::write(path, file_buf)
+            .await
+            .map_err(|_| warp::reject())?;
+        Ok(warp::reply::with_status(
+            "Created",
+            warp::http::StatusCode::CREATED,
+        ))
+    }
+}
+
+pub async fn start_server() {
+    let put_file = warp::path("files")
+        .and(warp::path::param())
+        .and(warp::post())
+        .and(warp::body::bytes())
+        .and_then(handlers::put_file);
+
+    let get_file = warp::path("files")
+        .and(warp::path::param())
+        .and(warp::get())
+        .and_then(handlers::get_file);
+
+    let routes = put_file.or(get_file);
+
+    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
+}
 
 #[tokio::main]
 async fn main() {
-    // Set up the routes for handling file uploads.
-    let put_routes = put()
-        .and(path::tail())
-        // 200MB limit
-        .and(warp::body::content_length_limit(1024 * 1024 * 200))
-        .and(warp::body::bytes())
-        .and_then(|filepath_tail: Tail, file: Bytes| {
-            let filepath = filepath_tail.as_str().to_owned();
-            put_file(filepath, file.to_vec())
-        });
-
-    // Set up the route that returns the contents of a file.
-    let get_routes = get().and(path::tail()).and_then(|filepath_tail: Tail| {
-        let filepath = filepath_tail.as_str().to_owned();
-        get_file(filepath)
-    });
-
-    // Start the server.
-    warp::serve(put_routes.or(get_routes))
-        .run(([127, 0, 0, 1], 3030))
-        .await;
+    start_server().await;
 }
