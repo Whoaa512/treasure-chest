@@ -15,7 +15,10 @@ pub mod handlers {
                 warp::http::StatusCode::OK,
             )),
             Err(_) => Ok(warp::reply::with_status(
-                "Not Found".to_string(),
+                warp::http::StatusCode::NOT_FOUND
+                    .as_str()
+                    .as_bytes()
+                    .to_vec(),
                 warp::http::StatusCode::NOT_FOUND,
             )),
         }
@@ -27,7 +30,7 @@ pub mod handlers {
             .await
             .map_err(|_| warp::reject())?;
         Ok(warp::reply::with_status(
-            "Created".to_string(),
+            warp::http::StatusCode::CREATED.as_str().as_bytes().to_vec(),
             warp::http::StatusCode::CREATED,
         ))
     }
